@@ -2,8 +2,11 @@ let video;
 let facemesh;
 let predictions = [];
 let isDetecting = false; // 紀錄是否已經開始收到辨識結果
+let earringImg; // 宣告耳環圖片變數
 
 function preload() {
+  // 載入耳環圖片檔案
+  earringImg = loadImage('pic/acc/acc1_ring.png');
   // 新版 ml5.js (v1.0+) 的寫法：模型名稱改為 faceMesh (大寫 M) 並建議在 preload() 載入
   facemesh = ml5.faceMesh({ maxFaces: 1 });
 }
@@ -93,10 +96,7 @@ function drawEarring(earlobePoint) {
   let x = map(earlobePoint.x, 0, video.width, -width * 0.25, width * 0.25);
   let y = map(earlobePoint.y, 0, video.height, -height * 0.25, height * 0.25);
   
-  fill(255, 255, 0); // 黃色
-  noStroke();
-  // 從耳垂位置往下畫出三個圓圈
-  for (let i = 1; i <= 3; i++) {
-    circle(x, y + (i * 15), 10);
-  }
+  // 使用圖片取代原本的黃色圓圈，並將 Y 軸稍微往下加一點偏移，產生掛在耳垂上的效果
+  let imgSize = 40; // 可自行調整耳環的顯示大小
+  image(earringImg, x, y + 15, imgSize, imgSize);
 }
