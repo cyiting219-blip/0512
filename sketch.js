@@ -2,23 +2,24 @@ let video;
 let facemesh;
 let predictions = [];
 
+function preload() {
+  // 新版 ml5.js (v1.0+) 的寫法：模型名稱改為 faceMesh (大寫 M) 並建議在 preload() 載入
+  facemesh = ml5.faceMesh({ maxFaces: 1 });
+}
+
 function setup() {
   // 第一步：產生全螢幕畫布
   createCanvas(windowWidth, windowHeight);
   
   // 取得攝影機影像並隱藏原本預設的 HTML 影片元素
-  video = createCapture(VIDEO);
+  // 若發生 NotFoundError，表示找不到攝影機或是瀏覽器權限/連線安全 (https 或 localhost) 的問題
+  video = createCapture(VIDEO, () => {
+    // 當攝影機準備好後，開始進行臉部辨識
+    facemesh.detectStart(video, results => {
+      predictions = results;
+    });
+  });
   video.hide();
-
-  // 初始化 ml5.js 的 Facemesh 模型
-  facemesh = ml5.facemesh(video, () => {
-    console.log("Facemesh 模型載入完成！");
-  });
-
-  // 監聽並儲存辨識結果
-  facemesh.on("predict", results => {
-    predictions = results;
-  });
 }
 
 function draw() {
@@ -33,7 +34,8 @@ function draw() {
 
   // 繪製耳環
   if (predictions.length > 0 && video.width > 0) {
-    let keypoints = predictions[0].scaledMesh;
+    // 新版 ml5.js 資料結構中，臉部特徵點陣列名稱變更為 keypoints
+    let keypoints = predictions[0].keypoints;
     
     // MediaPipe Facemesh 中，177 與 401 大約是左右耳垂的位置
     let rightEarlobe = keypoints[177];
@@ -43,13 +45,20 @@ function draw() {
     drawEarring(leftEarlobe);
   }
   pop();
+
+  // 在視窗上方加上文字 (放在 pop() 之後避免文字被左右鏡像翻轉)
+  fill(0); // 設定文字顏色為黑色
+  textSize(32); // 設定文字大小
+  textAlign(CENTER, TOP); // 對齊畫布中央上方
+  text("414730373", width / 2, 20); // 畫出文字，Y 座標為 20
 }
 
 // 繪製耳環的輔助函數
 function drawEarring(earlobePoint) {
   // 將影像上的座標映射到縮放後的影片尺寸範圍內
-  let x = map(earlobePoint[0], 0, video.width, -width * 0.25, width * 0.25);
-  let y = map(earlobePoint[1], 0, video.height, -height * 0.25, height * 0.25);
+  // 新版 ml5.js 中，座標變成物件的 .x 與 .y 屬性
+  let x = map(earlobePoint.x, 0, video.width, -width * 0.25, width * 0.25);
+  let y = map(earlobePoint.y, 0, video.height, -height * 0.25, height * 0.25);
   
   fill(255, 255, 0); // 黃色
   noStroke();
