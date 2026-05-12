@@ -1,6 +1,7 @@
 let video;
 let facemesh;
 let predictions = [];
+let isDetecting = false; // 紀錄是否已經開始收到辨識結果
 
 function preload() {
   // 新版 ml5.js (v1.0+) 的寫法：模型名稱改為 faceMesh (大寫 M) 並建議在 preload() 載入
@@ -16,6 +17,7 @@ function setup() {
   video = createCapture(VIDEO, () => {
     // 當攝影機準備好後，開始進行臉部辨識
     facemesh.detectStart(video, results => {
+      isDetecting = true; // 成功收到回呼，表示模型已經開始運作
       predictions = results;
     });
   });
@@ -51,6 +53,37 @@ function draw() {
   textSize(32); // 設定文字大小
   textAlign(CENTER, TOP); // 對齊畫布中央上方
   text("414730373", width / 2, 20); // 畫出文字，Y 座標為 20
+
+  // 在畫面下方顯示載入進度條或提示文字
+  if (!isDetecting) {
+    // 如果還沒收到辨識結果，顯示等待進度條
+    fill(0);
+    textSize(20);
+    textAlign(CENTER, BOTTOM);
+    text("正在初始化攝影機與模型...", width / 2, height - 50);
+    
+    // 繪製動態進度條 (來回跑動的效果)
+    let barWidth = width * 0.5;
+    let barHeight = 15;
+    let barX = width / 2 - barWidth / 2;
+    let barY = height - 40;
+    
+    stroke(50);
+    noFill();
+    rect(barX, barY, barWidth, barHeight, 10); // 畫進度條外框
+    
+    noStroke();
+    fill(100, 200, 255);
+    // 利用 sin 函數加上 frameCount 製造進度條動畫
+    let progress = map(sin(frameCount * 0.05), -1, 1, 0, 1);
+    rect(barX, barY, barWidth * progress, barHeight, 10); // 畫會動的進度條
+  } else if (predictions.length === 0) {
+    // 模型已啟動，但沒有偵測到臉部
+    fill(255, 0, 0); // 紅色警告文字
+    textSize(20);
+    textAlign(CENTER, BOTTOM);
+    text("未偵測到臉部，請確保您的臉部在鏡頭範圍內", width / 2, height - 30);
+  }
 }
 
 // 繪製耳環的輔助函數
